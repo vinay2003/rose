@@ -20,8 +20,11 @@ import { getLocalItem, setLocalItem, removeLocalItem } from './utils/storage';
 // Components
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { Navbar } from './components/Navbar';
+import { LoveCounter } from './components/LoveCounter';
+import { OurStoryDetailsSection } from './components/OurStoryDetailsSection';
 import { FloatingHearts } from './components/FloatingHearts';
 import { MemoriesSection } from './components/MemoriesSection';
+import { DailyLoveLetterSection } from './components/DailyLoveLetterSection';
 import { LoveNotesSection } from './components/LoveNotesSection';
 import { ConversationsSection } from './components/ConversationsSection';
 import { SongSection } from './components/SongSection';
@@ -31,6 +34,8 @@ import { PromiseSection } from './components/PromiseSection';
 import { FinalSurprise } from './components/FinalSurprise';
 import { Footer } from './components/Footer';
 import { BackupModal } from './components/BackupModal';
+
+const CURRENT_DATA_VERSION = 4;
 
 export const App: React.FC = () => {
   // Navigation / Welcome screen state
@@ -48,15 +53,27 @@ export const App: React.FC = () => {
 
   // Core Data States - loaded with real photos, real audio, and real timeline
   const [photos, setPhotos] = useState<PhotoMemory[]>(() => {
+    const version = getLocalItem('rose_app_version', 1);
+    if (version < CURRENT_DATA_VERSION) {
+      return DEFAULT_PHOTOS;
+    }
     const saved = getLocalItem<PhotoMemory[]>('photos', []);
     return saved.length > 0 ? saved : DEFAULT_PHOTOS;
   });
 
-  const [loveNotes, setLoveNotes] = useState<LoveNoteCard[]>(() =>
-    getLocalItem('love_notes', DEFAULT_LOVE_NOTES)
-  );
+  const [loveNotes, setLoveNotes] = useState<LoveNoteCard[]>(() => {
+    const version = getLocalItem('rose_app_version', 1);
+    if (version < CURRENT_DATA_VERSION) {
+      return DEFAULT_LOVE_NOTES;
+    }
+    return getLocalItem('love_notes', DEFAULT_LOVE_NOTES);
+  });
 
   const [chatQuotes, setChatQuotes] = useState<ChatQuote[]>(() => {
+    const version = getLocalItem('rose_app_version', 1);
+    if (version < CURRENT_DATA_VERSION) {
+      return DEFAULT_CHAT_QUOTES;
+    }
     const saved = getLocalItem<ChatQuote[]>('chat_quotes', []);
     return saved.length > 0 ? saved : DEFAULT_CHAT_QUOTES;
   });
@@ -67,7 +84,6 @@ export const App: React.FC = () => {
       hi: {
         ...DEFAULT_SONG_TRACKS.hi,
         ...(saved?.hi || {}),
-        // Enforce the real audio file from public/songs/ unless custom recording uploaded
         songTitle: saved?.hi?.audioBlobId ? saved.hi.songTitle : 'Meri Rose',
         nativeTitle: 'मेरी रोज़ — Hindi Version',
         hasAudio: true,
@@ -90,14 +106,27 @@ export const App: React.FC = () => {
     };
   });
 
-  const [envelopes, setEnvelopes] = useState<OpenWhenLetter[]>(() =>
-    getLocalItem('envelopes', DEFAULT_ENVELOPES)
-  );
+  const [envelopes, setEnvelopes] = useState<OpenWhenLetter[]>(() => {
+    const version = getLocalItem('rose_app_version', 1);
+    if (version < CURRENT_DATA_VERSION) {
+      return DEFAULT_ENVELOPES;
+    }
+    return getLocalItem('envelopes', DEFAULT_ENVELOPES);
+  });
 
   const [milestones, setMilestones] = useState<TimelineMilestone[]>(() => {
+    const version = getLocalItem('rose_app_version', 1);
+    if (version < CURRENT_DATA_VERSION) {
+      return DEFAULT_TIMELINE;
+    }
     const saved = getLocalItem<TimelineMilestone[]>('timeline_milestones', []);
     return saved.length > 0 ? saved : DEFAULT_TIMELINE;
   });
+
+  // Ensure version is set to current
+  useEffect(() => {
+    setLocalItem('rose_app_version', CURRENT_DATA_VERSION);
+  }, []);
 
   // LocalStorage Synchronizers
   useEffect(() => {
@@ -290,6 +319,7 @@ export const App: React.FC = () => {
     removeLocalItem('envelopes');
     removeLocalItem('timeline_milestones');
     removeLocalItem('promise_personal_vow');
+    removeLocalItem('daily_love_letters');
 
     setPhotos(DEFAULT_PHOTOS);
     setLoveNotes(DEFAULT_LOVE_NOTES);
@@ -326,6 +356,15 @@ export const App: React.FC = () => {
                 ✏️ Edit Mode is active! You can upload photos, add timeline memories, customize love letters, and upload audio recordings. Click &ldquo;Edit Mode (Active)&rdquo; above to switch to Rose&apos;s view.
               </div>
             )}
+
+            {/* Live Love Counter: Together Since Sept 24, 2026 • 8:51 AM */}
+            <LoveCounter />
+
+            {/* ❤️ Our Story & Everything About Rose */}
+            <OurStoryDetailsSection />
+
+            {/* Daily Fresh Love Letter for Rose (Tulips & Daisies) */}
+            <DailyLoveLetterSection isEditMode={isEditMode} />
 
             {/* 1. Our Memories Photo Gallery */}
             <MemoriesSection

@@ -22,9 +22,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onOpen }) => {
 
         {/* Small floating hearts badge */}
         <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium mb-6">
+          <span>🌷</span>
           <Sparkles className="w-3.5 h-3.5 text-rose-400" />
           <span>Our Little World</span>
           <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+          <span>🌼</span>
         </div>
 
         {/* Heading */}

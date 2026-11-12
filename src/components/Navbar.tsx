@@ -17,6 +17,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
+    { label: '🌷 Daily Letter 🌼', href: '#daily-letter' },
+    { label: '❤️ Our Story', href: '#our-story' },
     { label: 'Memories', href: '#memories' },
     { label: 'Little Things', href: '#little-things' },
     { label: 'Conversations', href: '#conversations' },

@@ -1,9 +1,12 @@
 export interface PhotoMemory {
   id: string;
-  url: string; // Base64 data URL or blob URL
+  url: string; // Base64 data URL, blob URL, or static asset path
   caption: string;
   date?: string;
+  time?: string;
   location?: string;
+  category?: 'all' | 'cozy' | 'outfit' | 'video' | 'dates' | 'recent';
+  mediaType?: 'photo' | 'video';
   aspectRatio?: 'square' | 'portrait' | 'landscape';
   createdAt: number;
 }
@@ -21,8 +24,10 @@ export interface ChatQuote {
   sender: 'Vinay' | 'Rose' | 'Both';
   quote: string;
   date: string;
+  time?: string;
   note?: string; // Personal note / why this made me smile
   tag?: string;
+  dialogue?: Array<{ speaker: 'Vinay' | 'Rose'; text: string; time?: string }>;
 }
 
 export interface SongTrack {
@@ -52,9 +57,12 @@ export interface OpenWhenLetter {
 export interface TimelineMilestone {
   id: string;
   date: string;
+  time?: string;
   title: string;
   description: string;
   photoUrl?: string;
+  videoUrl?: string;
+  mediaType?: 'photo' | 'video';
   tag?: string;
   location?: string;
 }

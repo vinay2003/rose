@@ -12,15 +12,15 @@ interface HeartItem {
 
 export const FloatingHearts: React.FC = () => {
   const [hearts] = useState<HeartItem[]>(() => {
-    // Generate gentle ambient floating symbols
-    const symbols = ['🌸', '✨', '🤍', '💖', '🌹', '💕', '✨'];
-    return Array.from({ length: 18 }, (_, i) => ({
+    // Generate gentle ambient floating symbols with Rose's favourite Tulips & Daisies
+    const symbols = ['🌷', '🌼', '🌸', '✨', '🤍', '💖', '🌹', '💕', '🌷', '🌼', '✨'];
+    return Array.from({ length: 22 }, (_, i) => ({
       id: i,
       left: Math.random() * 100,
-      size: Math.floor(Math.random() * 14) + 12,
+      size: Math.floor(Math.random() * 14) + 14,
       duration: Math.random() * 12 + 14,
       delay: Math.random() * 8,
-      opacity: Math.random() * 0.4 + 0.25,
+      opacity: Math.random() * 0.45 + 0.25,
       symbol: symbols[Math.floor(Math.random() * symbols.length)],
     }));
   });
