@@ -144,3 +144,20 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #F472B6;
 }
+
+/* Hide scrollbar for clean horizontal navbar scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Bulletproof aspect-ratio fallbacks */
+.aspect-card {
+  aspect-ratio: 4 / 3;
+}
+.aspect-cinema {
+  aspect-ratio: 16 / 9;
+}

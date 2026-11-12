@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { PhotoMemory } from '../types';
 import {
   Camera,
@@ -16,6 +16,8 @@ import {
   Heart,
   Coffee,
   Smile,
+  ChevronLeft,
+  ChevronRight,
   Image as ImageIcon,
 } from 'lucide-react';
 
@@ -39,7 +41,7 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPhoto, setEditingPhoto] = useState<PhotoMemory | null>(null);
-  const [lightboxPhoto, setLightboxPhoto] = useState<PhotoMemory | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   // Active filter tab
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('all');
@@ -59,7 +61,7 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
     return item.mediaType === 'video' || item.url.endsWith('.mp4') || item.url.includes('VIDEO-');
   };
 
-  // Filtered photos
+  // Filtered photos based on active category
   const filteredPhotos = useMemo(() => {
     if (activeFilter === 'all') return photos;
     if (activeFilter === 'video') {
@@ -67,6 +69,30 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
     }
     return photos.filter((p) => p.category === activeFilter);
   }, [photos, activeFilter]);
+
+  // Current photo in lightbox
+  const lightboxPhoto = lightboxIndex !== null && filteredPhotos[lightboxIndex]
+    ? filteredPhotos[lightboxIndex]
+    : null;
+
+  // Keyboard navigation for Lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (lightboxIndex === null) return;
+      if (e.key === 'Escape') setLightboxIndex(null);
+      if (e.key === 'ArrowRight') {
+        setLightboxIndex((prev) => (prev !== null ? (prev + 1) % filteredPhotos.length : 0));
+      }
+      if (e.key === 'ArrowLeft') {
+        setLightboxIndex((prev) =>
+          prev !== null ? (prev - 1 + filteredPhotos.length) % filteredPhotos.length : 0
+        );
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lightboxIndex, filteredPhotos.length]);
 
   // Handle file selection (image or video)
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,15 +219,15 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
     <section id="memories" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-16">
       {/* Section Header */}
       <div className="text-center max-w-2xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100/70 text-rose-700 text-xs font-medium mb-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100/70 text-rose-700 text-xs font-semibold mb-3">
           <Camera className="w-3.5 h-3.5" />
           <span>Our Visual Scrapbook</span>
         </div>
-        <h2 className="font-serif-romantic text-3xl sm:text-4xl md:text-5xl text-stone-900 mb-4">
+        <h2 className="font-serif-romantic text-3xl sm:text-4xl md:text-5xl text-stone-900 mb-4 font-semibold">
           Our Cherished Memories
         </h2>
         <p className="font-sans text-stone-600 text-sm sm:text-base leading-relaxed">
-          Every photo, video whisper, late-night laugh, and sunlit moment captured across our journey.
+          Hover to watch video moments, click to enlarge in full screen, and relive every smile we&apos;ve shared.
         </p>
 
         {/* Upload Button */}
@@ -218,7 +244,7 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-12">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-10">
         {filterTabs.map((tab) => {
           const isActive = activeFilter === tab.id;
           return (
@@ -228,7 +254,7 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all cursor-pointer ${
                 isActive
                   ? 'bg-rose-500 text-white shadow-md shadow-rose-500/25 scale-105'
-                  : 'bg-white/80 text-stone-600 hover:bg-rose-50 hover:text-rose-600 border border-stone-200/60'
+                  : 'bg-white text-stone-600 hover:bg-rose-50 hover:text-rose-600 border border-stone-200'
               }`}
             >
               {tab.icon}
@@ -263,7 +289,7 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {filteredPhotos.map((photo, index) => {
             const isVid = isVideo(photo);
             // Subtle alternating rotation for scrapbook feel
@@ -273,7 +299,7 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
             return (
               <div
                 key={photo.id}
-                className={`relative group bg-white rounded-2xl p-4 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1.5 ${rotClass}`}
+                className={`relative group bg-white rounded-2xl p-3.5 sm:p-4 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1.5 ${rotClass}`}
               >
                 {/* Washi tape accent on top */}
                 <div
@@ -285,33 +311,52 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
                       : index % 3 === 1
                       ? 'washi-tape-lavender'
                       : 'washi-tape-sunset'
-                  } rounded-xs z-10`}
+                  } rounded-xs z-10 pointer-events-none`}
                 />
 
-                {/* Media Container */}
+                {/* Media Container with solid aspect ratio */}
                 <div
-                  onClick={() => setLightboxPhoto(photo)}
-                  className="relative aspect-4/3 w-full overflow-hidden rounded-xl bg-stone-900 cursor-pointer group"
+                  onClick={() => setLightboxIndex(index)}
+                  className="relative aspect-card aspect-[4/3] w-full min-h-[220px] sm:min-h-[260px] overflow-hidden rounded-2xl bg-stone-900 cursor-pointer group shadow-sm"
                 >
                   {isVid ? (
                     <>
+                      {/* Video with #t=0.001 to guarantee the first frame is painted */}
                       <video
-                        src={photo.url}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
-                        preload="metadata"
+                        src={`${photo.url}#t=0.001`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        preload="auto"
                         muted
                         playsInline
+                        onMouseEnter={(e) => {
+                          try {
+                            e.currentTarget.play();
+                          } catch {}
+                        }}
+                        onMouseLeave={(e) => {
+                          try {
+                            e.currentTarget.pause();
+                            e.currentTarget.currentTime = 0.001;
+                          } catch {}
+                        }}
                       />
+
                       {/* Video indicator badge */}
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1.5 shadow-md">
+                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[11px] font-medium flex items-center gap-1.5 shadow-md z-10">
                         <Film className="w-3 h-3 text-rose-400" />
-                        <span>Video Reel</span>
+                        <span>Video Moment</span>
                       </div>
-                      {/* Big Play Button Overlay */}
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="w-13 h-13 rounded-full bg-rose-500/90 text-white shadow-xl flex items-center justify-center transform group-hover:scale-110 transition-transform">
+
+                      {/* Central Play Button Overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/15 group-hover:bg-transparent transition-colors">
+                        <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-rose-500/90 text-white shadow-xl flex items-center justify-center transform group-hover:scale-115 transition-transform backdrop-blur-xs">
                           <Play className="w-6 h-6 ml-0.5 fill-current" />
                         </span>
+                      </div>
+
+                      {/* Hover preview tooltip */}
+                      <div className="absolute bottom-2.5 right-2.5 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[10px] text-white/90 opacity-80 group-hover:opacity-100 transition-opacity">
+                        Hover to preview
                       </div>
                     </>
                   ) : (
@@ -319,9 +364,16 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
                       <img
                         src={photo.url}
                         alt={photo.caption}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 bg-stone-100"
                         loading="lazy"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.src.startsWith('/')) {
+                            target.src = '/' + photo.url.replace(/^\.?\//, '');
+                          }
+                        }}
                       />
+
                       {/* Hover view overlay */}
                       <div className="absolute inset-0 bg-stone-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <span className="p-2.5 rounded-full bg-white/90 text-stone-800 shadow-md transform scale-90 group-hover:scale-100 transition-transform">
@@ -333,29 +385,29 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
                 </div>
 
                 {/* Caption & Metadata */}
-                <div className="pt-4 pb-2 px-1">
+                <div className="pt-3.5 pb-1 px-1">
                   <p className="font-script-handwriting text-2xl text-stone-800 leading-snug mb-2 line-clamp-2">
                     {photo.caption}
                   </p>
 
                   <div className="flex flex-wrap items-center justify-between text-xs text-stone-500 pt-2 border-t border-rose-50 gap-2">
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2">
                       {photo.date && (
-                        <span className="inline-flex items-center gap-1 text-rose-600 font-medium">
+                        <span className="inline-flex items-center gap-1 text-rose-600 font-semibold">
                           <Calendar className="w-3 h-3" />
                           <span>{photo.date}</span>
                         </span>
                       )}
                       {photo.time && (
-                        <span className="inline-flex items-center gap-1 text-stone-500 bg-stone-50 px-1.5 py-0.5 rounded-md border border-stone-100">
-                          <Clock className="w-3 h-3 text-rose-400" />
+                        <span className="inline-flex items-center gap-1 text-stone-600 bg-stone-50 px-2 py-0.5 rounded-md border border-stone-100 font-medium">
+                          <Clock className="w-3 h-3 text-rose-500" />
                           <span>{photo.time}</span>
                         </span>
                       )}
                       {photo.location && (
                         <span className="inline-flex items-center gap-1 text-stone-400">
                           <MapPin className="w-3 h-3 text-rose-400" />
-                          <span className="truncate max-w-[120px]">{photo.location}</span>
+                          <span className="truncate max-w-[110px]">{photo.location}</span>
                         </span>
                       )}
                     </div>
@@ -423,7 +475,7 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
                 <label className="block text-xs font-medium text-stone-700 mb-1.5">Select Media File</label>
                 <div className="border-2 border-dashed border-rose-200 rounded-2xl p-4 text-center hover:border-rose-400 transition-colors bg-rose-50/30">
                   {previewUrl ? (
-                    <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-stone-100 mb-2">
+                    <div className="relative aspect-card aspect-[4/3] w-full rounded-xl overflow-hidden bg-stone-900 mb-2">
                       {mediaType === 'video' ? (
                         <video src={previewUrl} controls className="w-full h-full object-contain" />
                       ) : (
@@ -512,9 +564,9 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
                   >
                     <option value="all">General Memory</option>
                     <option value="video">Video Reel 🎬</option>
-                    <option value="cozy">Cozy & Bedtime 🧸</option>
-                    <option value="outfit">Smiles & Outfits ✨</option>
-                    <option value="dates">Dates & Whispers ☕</option>
+                    <option value="cozy">Cozy &amp; Bedtime 🧸</option>
+                    <option value="outfit">Smiles &amp; Outfits ✨</option>
+                    <option value="dates">Dates &amp; Whispers ☕</option>
                   </select>
                 </div>
               </div>
@@ -555,9 +607,9 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
             <h3 className="font-serif-romantic text-2xl text-stone-900 mb-2">Edit Memory Details</h3>
 
             <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div className="aspect-video w-full rounded-xl overflow-hidden bg-stone-900">
+              <div className="aspect-card aspect-[4/3] w-full rounded-xl overflow-hidden bg-stone-900">
                 {isVideo(editingPhoto) ? (
-                  <video src={editingPhoto.url} controls className="w-full h-full object-contain" />
+                  <video src={`${editingPhoto.url}#t=0.001`} controls className="w-full h-full object-contain" />
                 ) : (
                   <img src={editingPhoto.url} alt={editingPhoto.caption} className="w-full h-full object-contain" />
                 )}
@@ -625,44 +677,85 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
         </div>
       )}
 
-      {/* Fullscreen Lightbox Modal (Photo & Video) */}
+      {/* Fullscreen Lightbox Modal with Next/Previous Controls */}
       {lightboxPhoto && (
         <div
-          onClick={() => setLightboxPhoto(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in"
+          onClick={() => setLightboxIndex(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/92 backdrop-blur-md animate-fade-in"
         >
+          {/* Close button */}
+          <button
+            onClick={() => setLightboxIndex(null)}
+            className="absolute top-4 right-4 z-50 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
+            aria-label="Close lightbox"
+          >
+            <X className="w-7 h-7" />
+          </button>
+
+          {/* Previous Button */}
+          {filteredPhotos.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) =>
+                  prev !== null ? (prev - 1 + filteredPhotos.length) % filteredPhotos.length : 0
+                );
+              }}
+              className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-50 p-2 sm:p-3 rounded-full bg-black/50 hover:bg-rose-600 text-white backdrop-blur-md transition-all cursor-pointer"
+              aria-label="Previous memory"
+            >
+              <ChevronLeft className="w-6 h-6 sm:w-7 sm:h-7" />
+            </button>
+          )}
+
+          {/* Next Button */}
+          {filteredPhotos.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) =>
+                  prev !== null ? (prev + 1) % filteredPhotos.length : 0
+                );
+              }}
+              className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-50 p-2 sm:p-3 rounded-full bg-black/50 hover:bg-rose-600 text-white backdrop-blur-md transition-all cursor-pointer"
+              aria-label="Next memory"
+            >
+              <ChevronRight className="w-6 h-6 sm:w-7 sm:h-7" />
+            </button>
+          )}
+
+          {/* Content container */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-4xl w-full max-h-[92vh] flex flex-col items-center"
+            className="relative max-w-4xl w-full max-h-[92vh] flex flex-col items-center justify-center"
           >
-            <button
-              onClick={() => setLightboxPhoto(null)}
-              className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
-            >
-              <X className="w-6 h-6" />
-            </button>
-
             {isVideo(lightboxPhoto) ? (
               <video
                 src={lightboxPhoto.url}
                 controls
                 autoPlay
                 playsInline
-                className="max-h-[75vh] w-auto max-w-full rounded-2xl shadow-2xl bg-black"
+                className="max-h-[72vh] w-auto max-w-full rounded-2xl shadow-2xl bg-black"
               />
             ) : (
               <img
                 src={lightboxPhoto.url}
                 alt={lightboxPhoto.caption}
-                className="max-h-[75vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
+                className="max-h-[72vh] w-auto max-w-full rounded-2xl object-contain shadow-2xl"
               />
             )}
 
-            <div className="mt-4 text-center text-white px-4">
-              <p className="font-script-handwriting text-3xl text-rose-200 mb-1.5">
+            {/* Captions and Metadata */}
+            <div className="mt-4 text-center text-white px-4 max-w-2xl">
+              <p className="font-script-handwriting text-2xl sm:text-3xl text-rose-200 mb-1.5">
                 {lightboxPhoto.caption}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs text-stone-300">
+                {lightboxIndex !== null && (
+                  <span className="bg-white/15 px-2 py-0.5 rounded-full text-white font-medium">
+                    {lightboxIndex + 1} of {filteredPhotos.length}
+                  </span>
+                )}
                 {lightboxPhoto.date && (
                   <span className="flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-rose-300" />
@@ -679,12 +772,6 @@ export const MemoriesSection: React.FC<MemoriesSectionProps> = ({
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-rose-300" />
                     <span>{lightboxPhoto.location}</span>
-                  </span>
-                )}
-                {isVideo(lightboxPhoto) && (
-                  <span className="flex items-center gap-1 text-rose-300 font-medium bg-rose-500/20 px-2 py-0.5 rounded-full">
-                    <Film className="w-3 h-3" />
-                    <span>Playable Video Reel</span>
                   </span>
                 )}
               </div>
